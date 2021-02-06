@@ -4,6 +4,7 @@ import( "bufio"
 	"os"
 	"log"
 	"strings"
+	"strconv"
 )
 
 
@@ -17,6 +18,40 @@ func isList(str string) bool {
 
 func isLink(str string) bool {
 	return len(trim(str)) > 3 &&  trim(str)[0:3] == "=> "
+}
+
+func isHeader(str string) bool {
+	strCut := trim(str)
+	idx := strings.Index(strCut, " ")
+
+	res := true
+
+	if idx != -1 {
+		hd := strCut[0:idx]
+		for i := 0; i < len(hd); i++ {
+			if hd[i] != '#' {
+				res = false
+				break
+			}
+		}
+	} else {
+		res = false
+	}
+
+	return res
+}
+
+func toHeader(str string) string {
+	strCut := trim(str)
+	idx := strings.Index(strCut, " ")
+
+	lvl := 1
+
+	hd := strCut[0:idx]
+	lvl = len(hd)
+
+	return "<h" + strconv.Itoa(lvl) + ">" + strCut[idx+1:] + "</h" + strconv.Itoa(lvl) + ">"
+
 }
 
 func toHref(str string) string {
@@ -82,8 +117,12 @@ func parseFile(filename string, writer *bufio.Writer) {
 				if isLink(r) {
 					writer.WriteString(toHref(r))
 				} else {
-					if r != "" {
-						writer.WriteString("<p>" + trim(r) + "</p>")
+					if isHeader(r) {
+						writer.WriteString(toHeader(r))
+					} else {
+						if r != "" {
+							writer.WriteString("<p>" + trim(r) + "</p>")
+						}
 					}
 				}
 			}
