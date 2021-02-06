@@ -71,6 +71,9 @@ func toHref(str string) string {
 	return res
 }
 
+func toLi(str string) string {
+	return  "<li>" + trim(str)[2:] + "</li>"
+}
 
 func parseFile(filename string, writer *bufio.Writer) {
 	file, err := os.Open(filename)
@@ -100,32 +103,39 @@ func parseFile(filename string, writer *bufio.Writer) {
 
 		if verb {
 			writer.WriteString(r + "\n")
-		} else {
-			if !list &&  isList(r) {
-				writer.WriteString("<ul>")
-				list = true
-			} else {
-				if !isList(r)  &&  list {
-					writer.WriteString("</ul>")
-					list = false
-				}
-			}
+			continue
+		}
 
-			if isList(r) {
-				writer.WriteString("<li>" + trim(r)[2:] + "</li>")
-			} else {
-				if isLink(r) {
-					writer.WriteString(toHref(r))
-				} else {
-					if isHeader(r) {
-						writer.WriteString(toHeader(r))
-					} else {
-						if r != "" {
-							writer.WriteString("<p>" + trim(r) + "</p>")
-						}
-					}
-				}
-			}
+		if !list &&  isList(r) {
+			writer.WriteString("<ul>" + toLi(r))
+			list = true
+			continue
+		}
+
+		if !isList(r)  &&  list {
+			writer.WriteString("</ul>")
+			list = false
+			continue
+		}
+
+		if isList(r) {
+			writer.WriteString(toLi(r))
+			continue
+		}
+
+		if isLink(r) {
+			writer.WriteString(toHref(r))
+			continue
+		}
+
+		if isHeader(r) {
+			writer.WriteString(toHeader(r))
+			continue
+		}
+
+		if r != "" {
+			writer.WriteString("<p>" + trim(r) + "</p>")
+			continue
 		}
 	}
 
