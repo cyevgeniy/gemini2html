@@ -164,7 +164,11 @@ func parseFile(filename string, writer *bufio.Writer) {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatal("No input file provided")
+	}
+
 	writer := bufio.NewWriter(os.Stdout)
-	parseFile("test.gemini", writer)
+	parseFile(os.Args[1], writer)
 	writer.Flush()
 }
