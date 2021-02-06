@@ -61,6 +61,7 @@ func toHref(str string) string {
 	var href, cpt string
 	if idx == -1 {
 		href = cutStr
+		cpt = href
 	} else {
 		href = cutStr[:idx]
 		cpt = cutStr[idx +1:]
