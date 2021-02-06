@@ -76,6 +76,15 @@ func toLi(str string) string {
 	return  "<li>" + trim(str)[2:] + "</li>"
 }
 
+func isImage(str string) bool {
+	return len(trim(str)) > 3 &&  trim(str)[0:3] == "=] "
+}
+
+func toImg(str string) string {
+	cutStr := trim(str[2:])
+	return "<p><img src=\"" + cutStr + "\"/></p>"
+}
+
 func parseFile(filename string, writer *bufio.Writer) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -126,6 +135,11 @@ func parseFile(filename string, writer *bufio.Writer) {
 
 		if isLink(r) {
 			writer.WriteString(toHref(r))
+			continue
+		}
+
+		if isImage(r) {
+			writer.WriteString(toImg(r))
 			continue
 		}
 
