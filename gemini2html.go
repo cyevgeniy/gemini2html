@@ -67,7 +67,7 @@ func toHref(str string) string {
 		cpt = cutStr[idx +1:]
 	}
 
-	res := "<a href=\"" + href  + "\">" + cpt + "</a>"
+	res := "<p><a href=\"" + href  + "\">" + cpt + "</a></p>"
 
 	return res
 }
