@@ -67,6 +67,11 @@ func toHref(str string) string {
 		cpt = cutStr[idx +1:]
 	}
 
+	dotIdx := strings.LastIndex(href, ".gmi")
+	if dotIdx != -1 {
+		href = href[:dotIdx+1] + "html"
+	}
+
 	res := "<p><a href=\"" + href  + "\">" + cpt + "</a></p>"
 
 	return res
