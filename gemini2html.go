@@ -305,7 +305,8 @@ func generateSite() {
 
      for i := range postsFiles {
 		baseName := getBaseFile(postsFiles[i])
-		if getFileExt(baseName) == "gmi" {
+		ext := getFileExt(baseName)
+		if ext == "gmi" || ext == "gemini" {
      	 	file2html(postsFiles[i], "_site/" + getFileName(postsFiles[i]) + ".html")
         }
      }
