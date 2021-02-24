@@ -304,7 +304,7 @@ func prepareDirs() {
 
 	os.Mkdir("_site/posts", 0777)
 	os.Mkdir("_site/assets", 0777)
-	assets := getFileNames("assets")
+	assets := getFileNames("assets/")
 	for i := range assets {
 		base := filepath.Base(assets[i])
 		fmt.Printf("Copying file %s into "+"_site/assets/"+base, assets[i])
