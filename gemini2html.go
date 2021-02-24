@@ -1,15 +1,27 @@
 package main
 
-import( "bufio"
-	"os"
-	"log"
-	"strings"
-	"strconv"
-	"path/filepath"
-	"io"
+import (
+	"bufio"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
+const (
+	defTemplate = `<html><head>
+    <meta charset='utf-8'>
+	<style>body{font-family:Open Sans,Arial;color:#454545;font-size:16px;margin:2em auto;max-width:800px;padding:1em;line-height:1.4;text-align:justify}</style>
+    <title>Personal blog</title><meta name='viewport' content='width=device-width, initial-scale=1'>
+    </head><body>{%content%}</body></html>`
+
+	POST_TEMPLATE = "templates/post.txt"
+	DEFAULT_TEMPLATE = "templates/default.txt"
+)
 
 func trim(str string) string {
 	return strings.TrimSpace(str)
@@ -20,7 +32,7 @@ func isList(str string) bool {
 }
 
 func isLink(str string) bool {
-	return len(trim(str)) > 3 &&  trim(str)[0:3] == "=> "
+	return len(trim(str)) > 3 && trim(str)[0:3] == "=> "
 }
 
 func isHeader(str string) bool {
@@ -67,7 +79,7 @@ func toHref(str string) string {
 		cpt = href
 	} else {
 		href = cutStr[:idx]
-		cpt = cutStr[idx +1:]
+		cpt = cutStr[idx+1:]
 	}
 
 	dotIdx := strings.LastIndex(href, ".gmi")
@@ -75,13 +87,13 @@ func toHref(str string) string {
 		href = href[:dotIdx+1] + "html"
 	}
 
-	res := "<p><a href=\"" + href  + "\">" + cpt + "</a></p>"
+	res := "<p><a href=\"" + href + "\">" + cpt + "</a></p>"
 
 	return res
 }
 
 func toLi(str string) string {
-	return  "<li>" + trim(str)[2:] + "</li>"
+	return "<li>" + trim(str)[2:] + "</li>"
 }
 
 func isVerb(str string) bool {
@@ -90,7 +102,7 @@ func isVerb(str string) bool {
 
 // Did not exist in gemini specs, just for my personal use
 func isImage(str string) bool {
-	return len(trim(str)) > 3 &&  trim(str)[0:3] == "=] "
+	return len(trim(str)) > 3 && trim(str)[0:3] == "=] "
 }
 
 func toImg(str string) string {
@@ -129,13 +141,13 @@ func parseFile(filename string, writer *bufio.Writer) {
 			continue
 		}
 
-		if !list &&  isList(r) {
+		if !list && isList(r) {
 			writer.WriteString("<ul>" + toLi(r))
 			list = true
 			continue
 		}
 
-		if !isList(r)  &&  list {
+		if !isList(r) && list {
 			writer.WriteString("</ul>")
 			list = false
 			continue
@@ -176,147 +188,156 @@ func parseFile(filename string, writer *bufio.Writer) {
 	}
 }
 
-func file2html(filenameIn, filenameOut string) {
-     fout, err := os.Create(filenameOut)
-     if err != nil {
-     	log.Fatal("Can't create output file " + filenameOut)
-     }
-	 const head = `<head>
-    <meta charset='utf-8'>
-	<style>body{font-family:Open Sans,Arial;color:#454545;font-size:16px;margin:2em auto;max-width:800px;padding:1em;line-height:1.4;text-align:justify}</style>
-    <title>Personal blog</title><meta name='viewport' content='width=device-width, initial-scale=1'>
-    </head>`
-     writer := bufio.NewWriter(fout)
-     writer.WriteString("<html>" + head + "<body>")
-     parseFile(filenameIn, writer)
-     writer.WriteString("</body></html>")
-     writer.Flush()
+func isFileExists(fileName string) bool {
 
-     err = fout.Close()
-     if err != nil {
-     	log.Fatal("Can't close output file")
-     }
+	_, err := os.Stat(fileName)
+
+	return !os.IsNotExist(err)
+
 }
 
-func getFileName(filename string) string {
-     idx := strings.LastIndex(filename, ".")
-     if idx == -1 {
-     	return filename
-     }
-
-     return filename[0:idx]
-}
-
-func getFileExt(filename string) string {
-     idx := strings.LastIndex(filename, ".")
-     if idx == -1 {
-     	return filename
-     }
-
-	if idx == len(filename) - 1 {
-		return ""
-    } else {
-    	return filename[idx + 1:]
+func validateFileExistance(fileName string) {
+	if !isFileExists(fileName) {
+		log.Fatal("Required file does not exists: " + fileName)
 	}
 }
 
-func getBaseFile(path string) string {
-		   idx := strings.LastIndex(path, "/")
-		   if idx == -1 {
-		       idx = 0
-		   }
+func file2html(filenameIn, filenameOut, template string) {
 
-		if idx == len(path) - 1 {
-			return ""
-		}
+	fout, err := os.Create(filenameOut)
+	if err != nil {
+		log.Fatal("Can't create output file " + filenameOut)
+	}
 
-		return path[idx + 1:]
+	validateFileExistance(filenameIn)
+
+	var tmplStr string
+
+	bts, err := ioutil.ReadFile(template)
+	if err != nil {
+		fmt.Println("Can't read content of template file. Default template will be used")
+		tmplStr = defTemplate
+	} else {
+		tmplStr = string(bts)
+	}
+
+	headerFooter := strings.Split(tmplStr, "{%content%}")
+
+	if len(headerFooter) != 2 {
+		log.Fatal("Fuck, can't parse template")
+	}
+
+	writer := bufio.NewWriter(fout)
+	writer.WriteString(headerFooter[0])
+	parseFile(filenameIn, writer)
+	writer.WriteString(headerFooter[1])
+	writer.Flush()
+
+	err = fout.Close()
+	if err != nil {
+		log.Fatal("Can't close output file")
+	}
+}
+
+func getFileName(filename string) string {
+	idx := strings.LastIndex(filename, ".")
+	if idx == -1 {
+		return filename
+	}
+
+	return filename[0:idx]
 }
 
 func getFileNames(dir string) []string {
 
 	fileList := make([]string, 0)
 
-	// We ignore any exceptions which occurs during Walk execution
-	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+	fileInfo, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return fileList
+	}
 
-		if err != nil {
-			return err
+	for _, file := range fileInfo {
+		if !file.IsDir() {
+			fileList = append(fileList, dir+file.Name())
 		}
-
-		if !f.IsDir() {
-			fileList = append(fileList, path)
-		   }
-
-		return err
-	})
+	}
 
 	return fileList
 }
 
 func copyFile(fSrc, fDst string) int64 {
 
-    src, err := os.Open(fSrc)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer src.Close()
+	src, err := os.Open(fSrc)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer src.Close()
 
-    // Create new file
-    dst, err := os.Create(fDst)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer dst.Close()
+	// Create new file
+	dst, err := os.Create(fDst)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dst.Close()
 
-    bytesCnt, err := io.Copy(dst, src)
-    if err != nil {
-        log.Fatal(err)
-    }
+	bytesCnt, err := io.Copy(dst, src)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return bytesCnt
 }
 
 func prepareDirs() {
 	if _, err := os.Stat("_site"); os.IsNotExist(err) {
-     	os.Mkdir("_site", 0777)
-     } else {
-          err := os.RemoveAll("_site")
+		os.Mkdir("_site", 0777)
+	} else {
+		err := os.RemoveAll("_site")
 
+		if err != nil {
+			log.Panic("Can't remove _site directory")
+		}
 
-	  if err != nil {
-     	      log.Panic("Can't remove _site directory")
-          }
+		os.Mkdir("_site", 0777)
+	}
 
-     os.Mkdir("_site", 0777)
-     }
-
-     os.Mkdir("_site/posts", 0777)
-	 os.Mkdir("_site/assets", 0777)
-	 assets := getFileNames("assets")
-	 for i := range assets {
-		fmt.Printf("Copying file %s into " + "_site/assets/" + getBaseFile(assets[i]), assets[i])
-		bc := copyFile(assets[i], "_site/assets/" + getBaseFile(assets[i]))
+	os.Mkdir("_site/posts", 0777)
+	os.Mkdir("_site/assets", 0777)
+	assets := getFileNames("assets")
+	for i := range assets {
+		base := filepath.Base(assets[i])
+		fmt.Printf("Copying file %s into "+"_site/assets/"+base, assets[i])
+		bc := copyFile(assets[i], "_site/assets/"+base)
 		fmt.Printf(" Done. Copied %d bytes\n", bc)
-	 }
+	}
+}
+
+func convertFiles(filenames []string, template string) {
+
+	for i := range filenames {
+		baseName := filepath.Base(filenames[i])
+		ext := filepath.Ext(baseName)
+		if ext == ".gmi" || ext == ".gemini" {
+			fullPath := "_site/" + getFileName(filenames[i]) + ".html"
+			file2html(filenames[i], fullPath, template)
+		}
+	}
 }
 
 func generateSite() {
 
 	prepareDirs()
 
-     postsFiles := getFileNames("./")
+	postsFiles := getFileNames("./posts/")
+	convertFiles(postsFiles, POST_TEMPLATE)
 
-     for i := range postsFiles {
-		baseName := getBaseFile(postsFiles[i])
-		ext := getFileExt(baseName)
-		if ext == "gmi" || ext == "gemini" {
-     	 	file2html(postsFiles[i], "_site/" + getFileName(postsFiles[i]) + ".html")
-        }
-     }
+	otherFiles := getFileNames("./")
+	convertFiles(otherFiles, DEFAULT_TEMPLATE)
 
 }
 
 func main() {
 	generateSite()
 }
+
