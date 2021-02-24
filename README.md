@@ -7,7 +7,7 @@ Convert gemini files to html.
 go run gemini2html.go
 ```
 
-It will expect ```posts``` directory with *.gmi files and ```assets``` directory.
+It will expect ```posts``` directory with *.gmi or *.gemini files and ```assets``` directory.
 
 Generated site will lie in ```_site``` directory.
 
