@@ -236,16 +236,20 @@ func getBaseFile(path string) string {
 func getFileNames(dir string) []string {
 
 	fileList := make([]string, 0)
-	e := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-	   	if !f.IsDir() {
+
+	// We ignore any exceptions which occurs during Walk execution
+	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+
+		if err != nil {
+			return err
+		}
+
+		if !f.IsDir() {
 			fileList = append(fileList, path)
 		   }
+
 		return err
 	})
-
-	if e != nil {
-		log.Fatal("Can't get filenames for Posts directory")
-	}
 
 	return fileList
 }
