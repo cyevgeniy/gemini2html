@@ -202,14 +202,7 @@ func validateFileExistance(fileName string) {
 	}
 }
 
-func file2html(filenameIn, filenameOut, template string) {
-
-	fout, err := os.Create(filenameOut)
-	if err != nil {
-		log.Fatal("Can't create output file " + filenameOut)
-	}
-
-	validateFileExistance(filenameIn)
+func getTemplateContent(template string) string {
 
 	var tmplStr string
 
@@ -220,6 +213,20 @@ func file2html(filenameIn, filenameOut, template string) {
 	} else {
 		tmplStr = string(bts)
 	}
+
+	return tmplStr
+}
+
+func file2html(filenameIn, filenameOut, template string) {
+
+	fout, err := os.Create(filenameOut)
+	if err != nil {
+		log.Fatal("Can't create output file " + filenameOut)
+	}
+
+	validateFileExistance(filenameIn)
+
+	tmplStr := getTemplateContent(template)
 
 	headerFooter := strings.Split(tmplStr, "{%content%}")
 
